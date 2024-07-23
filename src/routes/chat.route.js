@@ -8,7 +8,7 @@ import {
 const chatRouter = Router();
 
 chatRouter.route("/send-message").post(sendMessage);
-chatRouter.route("/fetch-chat").get(fetchChat);
+chatRouter.route("/fetch-chat").post(fetchChat);
 chatRouter.route("/fetch-department").get(fetchDepartment);
 
 export default chatRouter;
