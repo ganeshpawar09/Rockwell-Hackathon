@@ -13,5 +13,8 @@ app.use(
 );
 
 app.use("/api/v1/chat", chatRouter);
+app.use("/", () => {
+  console.log("hello");
+});
 
 export { app };
