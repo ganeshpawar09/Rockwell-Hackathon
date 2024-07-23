@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Chat } from "../model/chat.model.js";
-import { Account } from "../model/account.model.js";
+import { Department } from "../model/department.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -23,35 +23,37 @@ const generationConfig = {
 };
 
 const fetchChat = asyncHandler(async (req, res) => {
-  const { accountName } = req.body;
-  console.log(accountName);
-  if (!accountName) {
-    throw new ApiError(400, "Account name is missing");
+  const { departmentName } = req.body;
+  console.log(departmentName);
+  
+  if (!departmentName) {
+    throw new ApiError(400, "Department name is missing");
   }
 
-  // Fetch the account by the provided account name
-  const account = await Account.findOne({ accountName: accountName }).populate(
-    "chats"
-  );
-  if (!account) {
-    throw new ApiError(404, "Account Not Found");
+  // Fetch the department by the provided department name
+  const dep = await Department.findOne({ departmentName }).populate("chats");
+  if (!dep) {
+    throw new ApiError(404, "Department Not Found");
   }
 
-  const chats = account.chats.map((chat) => ({
+  // Map the chats to the desired format
+  const chats = dep.chats.map((chat) => ({
     name: chat.name,
     message: chat.message,
   }));
+
   // Send the response
   return res.status(200).json(new ApiResponse(200, chats, "Success"));
 });
-const fetchAccount = asyncHandler(async (req, res) => {
-  const accounts = await Account.find();
 
-  if (!accounts || accounts.length === 0) {
-    throw new ApiError(404, "No accounts found");
+const fetchDepartment = asyncHandler(async (req, res) => {
+  const deps = await Department.find();
+
+  if (!deps || deps.length === 0) {
+    throw new ApiError(404, "No departments found");
   }
 
-  return res.status(200).json(new ApiResponse(200, accounts, "Success"));
+  return res.status(200).json(new ApiResponse(200, deps, "Success"));
 });
 
 const sendMessage = asyncHandler(async (req, res) => {
@@ -76,15 +78,18 @@ const sendMessage = asyncHandler(async (req, res) => {
     });
 
     const result = await chatSession.sendMessage(message);
-    const department = result.response.text().trim().replace(/^"|"$/g, "");
+    const dep = result.response.text().trim().replace(/^"|"$/g, "");
 
-    // Use the department name as the account name
-    const accountName = department;
+    // Use the department name from the result
+    const departmentName = dep;
 
-    // Find the account
-    let account = await Account.findOne({ accountName: accountName });
-    if (!account) {
-      account = new Account({ accountName: accountName, chats: [] });
+    // Find the department
+    let department = await Department.findOne({ departmentName });
+    if (!department) {
+      department = new Department({
+        departmentName,
+        chats: [],
+      });
     }
 
     // Create a new chat message
@@ -96,17 +101,15 @@ const sendMessage = asyncHandler(async (req, res) => {
     // Save the chat message
     await chat.save();
 
-    // Add the chat message to the account's chats array
-    account.chats.push(chat._id);
-    await account.save();
+    // Add the chat message to the department's chats array
+    department.chats.push(chat._id);
+    await department.save(); // Save the department instance
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, chat, "New message sent and added"));
+    return res.status(200).json(new ApiResponse(200, chat, "New message sent and added"));
   } catch (error) {
     console.error("Error details:", error); // Log the entire error object
     res.status(500).send({ error: error.message });
   }
 });
 
-export { fetchChat, sendMessage, fetchAccount };
+export { fetchChat, sendMessage, fetchDepartment };

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  fetchAccount,
+  fetchDepartment,
   fetchChat,
   sendMessage,
 } from "../controllers/chat_controller.js";
@@ -9,6 +9,6 @@ const chatRouter = Router();
 
 chatRouter.route("/send-message").post(sendMessage);
 chatRouter.route("/fetch-chat").get(fetchChat);
-chatRouter.route("/fetch-account").get(fetchAccount);
+chatRouter.route("/fetch-department").get(fetchDepartment);
 
 export default chatRouter;
